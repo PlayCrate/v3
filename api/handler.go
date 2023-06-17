@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -59,8 +58,6 @@ func (s *APIServer) Run() {
 
 func Authorization(handlerFunc http.HandlerFunc, s *APIServer) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		fmt.Println("Calling Authorization")
-
 		tokenString := req.Header.Get("Authorization")
 		if tokenString == "" {
 			WriteJSON(res, http.StatusUnauthorized, ApiResponse{

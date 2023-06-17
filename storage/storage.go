@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -114,8 +115,7 @@ func (s *PostgresStore) InsertAccounts(acc *models.Account) error {
 	if err != nil {
 		return fmt.Errorf("unable to insert row: %w", err)
 	}
-
-	fmt.Println("Insert successful")
+	log.Println("Insert successful", acc.Name)
 
 	return nil
 }
