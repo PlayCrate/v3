@@ -3,9 +3,9 @@ package storage
 import (
 	"context"
 	"fmt"
-	"os"
+	"sync"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kattah7/v3/models"
 )
 
@@ -20,7 +20,7 @@ type Storage interface {
 	GetPlaytime() (*PlayerDataResponse, error)
 
 	InsertAccounts(*models.Account) error
-	Close(context.Context) error
+	Close()
 }
 
 // type Player map[string]*PlayerData
@@ -39,23 +39,36 @@ type PlayerDataResponse struct {
 // }
 
 type PostgresStore struct {
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
-func (s *PostgresStore) Close(ctx context.Context) error {
-	return s.db.Close(ctx)
+var (
+	pgInstance *PostgresStore
+	pgOnce     sync.Once
+)
+
+func (s *PostgresStore) Close() {
+	s.db.Close()
 }
 
-func NewPostgresStore() (*PostgresStore, error) {
-	db, err := pgx.Connect(context.Background(), "postgres://postgres:kattah42069@localhost:5432/playcrate_v3")
+func NewPostgresStore(ctx context.Context, connString string) (*PostgresStore, error) {
+	var err error
+
+	pgOnce.Do(func() {
+		db, err := pgxpool.New(ctx, connString)
+		if err != nil {
+			err = fmt.Errorf("unable to connect to database: %v", err)
+			return
+		}
+
+		pgInstance = &PostgresStore{db}
+	})
+
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
+		return nil, err
 	}
 
-	return &PostgresStore{
-		db: db,
-	}, nil
+	return pgInstance, nil
 }
 
 func (s *PostgresStore) Init() error {
@@ -97,10 +110,9 @@ func (s *PostgresStore) InsertAccounts(acc *models.Account) error {
         time_saved = EXCLUDED.time_saved
 `
 
-	err := s.db.QueryRow(context.Background(), query, acc.ID, acc.Name, acc.Secrets, acc.Eggs, acc.Bubbles, acc.Power, acc.Robux, acc.Playtime, acc.LastSavedTime)
+	_, err := s.db.Exec(context.Background(), query, acc.ID, acc.Name, acc.Secrets, acc.Eggs, acc.Bubbles, acc.Power, acc.Robux, acc.Playtime, acc.LastSavedTime)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("unable to insert row: %w", err)
 	}
 
 	fmt.Println("Insert successful")

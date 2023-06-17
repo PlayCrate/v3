@@ -9,6 +9,7 @@ import (
 type Config struct {
 	ListenAddress string `json:"listenAddress"`
 	Auth          string `json:"Auth"`
+	DBConnString  string `json:"connString"`
 }
 
 // NewConfig creates a configuration from file
