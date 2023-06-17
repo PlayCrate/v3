@@ -80,14 +80,14 @@ func (s *PostgresStore) CreateTables() error {
 	query :=
 		`CREATE TABLE IF NOT EXISTS players (
 			id SERIAL PRIMARY KEY,
-			robloxId INT NOT NULL UNIQUE,
+			robloxId BIGINT NOT NULL UNIQUE,
 			robloxName VARCHAR(255) NOT NULL,
-			secrets INT NOT NULL DEFAULT 0,
-			eggs INT NOT NULL DEFAULT 0,
-			bubbles INT NOT NULL DEFAULT 0,
-			power INT NOT NULL DEFAULT 0,
-			robux INT NOT NULL DEFAULT 0,
-			playtime INT NOT NULL DEFAULT 0,
+			secrets BIGINT NOT NULL DEFAULT 0,
+			eggs BIGINT NOT NULL DEFAULT 0,
+			bubbles BIGINT NOT NULL DEFAULT 0,
+			power BIGINT NOT NULL DEFAULT 0,
+			robux BIGINT NOT NULL DEFAULT 0,
+			playtime BIGINT NOT NULL DEFAULT 0,
 			time_saved TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		)`
 

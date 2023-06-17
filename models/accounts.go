@@ -3,18 +3,18 @@ package models
 import "time"
 
 type Account struct {
-	ID            int       `json:"robloxId"`
+	ID            int64     `json:"robloxId"`
 	Name          string    `json:"robloxName"`
-	Secrets       int       `json:"secrets,omitempty"`
-	Eggs          int       `json:"eggs,omitempty"`
-	Bubbles       int       `json:"bubbles,omitempty"`
-	Power         int       `json:"power,omitempty"`
-	Robux         int       `json:"robux,omitempty"`
-	Playtime      int       `json:"playtime,omitempty"`
+	Secrets       int64     `json:"secrets,omitempty"`
+	Eggs          int64     `json:"eggs,omitempty"`
+	Bubbles       int64     `json:"bubbles,omitempty"`
+	Power         int64     `json:"power,omitempty"`
+	Robux         int64     `json:"robux,omitempty"`
+	Playtime      int64     `json:"playtime,omitempty"`
 	LastSavedTime time.Time `json:"time_saved"`
 }
 
-func NewPlayer(ID int, Name string, Secrets int, Eggs int, Bubbles int, Power int, Robux int, Time int) *Account {
+func NewPlayer(ID int64, Name string, Secrets int64, Eggs int64, Bubbles int64, Power int64, Robux int64, Time int64) *Account {
 	return &Account{
 		ID:            ID,
 		Name:          Name,
