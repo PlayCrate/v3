@@ -20,7 +20,7 @@ func (s *PostgresStore) GetPlaytime() (*PlayerDataResponse, error) {
 		}
 
 		query += `
-			ORDER BY power DESC
+			ORDER BY playtime DESC
 			LIMIT $1`
 
 		rows, err := s.db.Query(context.Background(), query, LIMIT)
