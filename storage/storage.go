@@ -84,7 +84,7 @@ func (s *PostgresStore) CreateTables() error {
 
 func (s *PostgresStore) InsertAccounts(acc *models.Account) error {
 	query := `
-    INSERT INTO players (robloxId, robloxName, secrets, eggs, bubbles, power, robux, time, time_saved)
+    INSERT INTO players (robloxId, robloxName, secrets, eggs, bubbles, power, robux, playtime, time_saved)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     ON CONFLICT (robloxId) DO UPDATE SET
         robloxName = EXCLUDED.robloxName,
