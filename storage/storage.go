@@ -97,9 +97,10 @@ func (s *PostgresStore) InsertAccounts(acc *models.Account) error {
         time_saved = EXCLUDED.time_saved
 `
 
-	_, err := s.db.Exec(context.Background(), query, acc.ID, acc.Name, acc.Secrets, acc.Eggs, acc.Bubbles, acc.Power, acc.Robux, acc.Playtime, acc.LastSavedTime)
+	err := s.db.QueryRow(context.Background(), query, acc.ID, acc.Name, acc.Secrets, acc.Eggs, acc.Bubbles, acc.Power, acc.Robux, acc.Playtime, acc.LastSavedTime)
 	if err != nil {
-		return fmt.Errorf("unable to insert row: %w", err)
+		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+		os.Exit(1)
 	}
 
 	fmt.Println("Insert successful")
