@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -37,16 +38,18 @@ func (s *APIServer) Run() {
 
 	router.HandleFunc("/leaderboard", Authorization(makeHTTPHandleFunc(s.InsertPlayer), s)).Methods(http.MethodPost)
 	router.HandleFunc("/leaderboard/{which}", Authorization(makeHTTPHandleFunc(s.GetLeaderboards), s)).Methods(http.MethodGet)
+	router.HandleFunc("/auction", Authorization(makeHTTPHandleFunc(s.Auctions), s))
+	router.HandleFunc("/auctionDelete", Authorization(makeHTTPHandleFunc(s.DeleteAuction), s))
 
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		WriteJSON(w, http.StatusNotFound, ApiResponse{
+		WriteJSON(w, http.StatusOK, ApiResponse{
 			Success: false,
 			Error:   "Endpoint not found",
 		})
 	})
 
 	router.MethodNotAllowedHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		WriteJSON(w, http.StatusMethodNotAllowed, ApiResponse{
+		WriteJSON(w, http.StatusOK, ApiResponse{
 			Success: false,
 			Error:   "Method not allowed",
 		})
@@ -60,7 +63,7 @@ func Authorization(handlerFunc http.HandlerFunc, s *APIServer) http.HandlerFunc 
 	return func(res http.ResponseWriter, req *http.Request) {
 		tokenString := req.Header.Get("Authorization")
 		if tokenString == "" {
-			WriteJSON(res, http.StatusUnauthorized, ApiResponse{
+			WriteJSON(res, http.StatusOK, ApiResponse{
 				Success: false,
 				Error:   "No token provided",
 			})
@@ -68,7 +71,7 @@ func Authorization(handlerFunc http.HandlerFunc, s *APIServer) http.HandlerFunc 
 		}
 
 		if tokenString != s.cfg.Auth {
-			WriteJSON(res, http.StatusUnauthorized, ApiResponse{
+			WriteJSON(res, http.StatusOK, ApiResponse{
 				Success: false,
 				Error:   "Invalid token",
 			})
@@ -88,15 +91,67 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := f(w, r); err != nil {
-			WriteJSON(w, http.StatusBadRequest, ApiResponse{Error: err.Error()})
+			WriteJSON(w, http.StatusOK, ApiResponse{Error: err.Error()})
 		}
 	}
+}
+
+func (s *APIServer) DeleteAuction(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "POST" {
+		AuctionDelete := new(models.AuctionAccount)
+		if err := json.NewDecoder(r.Body).Decode(AuctionDelete); err != nil {
+			return err
+		}
+
+		if err := s.store.RemoveAuction(AuctionDelete); err != nil {
+			return err
+		}
+
+		return WriteJSON(w, http.StatusOK, ApiResponse{
+			Success: true,
+			Data:    "Auction Deleted",
+		})
+	}
+
+	return fmt.Errorf("Invalid Method")
+}
+
+func (s *APIServer) Auctions(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		auctions, err := s.store.GetAuctions()
+		if err != nil {
+			return err
+		}
+
+		return WriteJSON(w, http.StatusOK, ApiResponse{
+			Success: true,
+			Data:    auctions,
+		})
+	}
+
+	if r.Method == "POST" {
+		ListAuction := new(models.AuctionAccount)
+		if err := json.NewDecoder(r.Body).Decode(ListAuction); err != nil {
+			return err
+		}
+
+		if err := s.store.ListAuction(ListAuction); err != nil {
+			return err
+		}
+
+		return WriteJSON(w, http.StatusOK, ApiResponse{
+			Success: true,
+			Data:    ListAuction,
+		})
+	}
+
+	return fmt.Errorf("Invalid Method")
 }
 
 func (s *APIServer) GetLeaderboards(w http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)["which"]
 
-	leaderboards := map[string]func() (*storage.PlayerDataResponse, error){
+	leaderboards := map[string]func() (*models.PlayerDataResponse, error){
 		"eggs":     s.store.GetEggs,
 		"bubbles":  s.store.GetBubbles,
 		"secrets":  s.store.GetSecrets,
@@ -117,10 +172,7 @@ func (s *APIServer) GetLeaderboards(w http.ResponseWriter, r *http.Request) erro
 		})
 	}
 
-	return WriteJSON(w, http.StatusBadRequest, ApiResponse{
-		Success: false,
-		Error:   "Invalid Leaderboard",
-	})
+	return fmt.Errorf("Invalid Leaderboard")
 }
 
 func (s *APIServer) InsertPlayer(w http.ResponseWriter, r *http.Request) error {
@@ -130,10 +182,7 @@ func (s *APIServer) InsertPlayer(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if createAccReq.ID == 0 && createAccReq.Name == "" {
-		return WriteJSON(w, 400, ApiResponse{
-			Success: false,
-			Error:   "ID cannot be 0",
-		})
+		return fmt.Errorf("ID cannot be 0")
 	}
 
 	account := models.NewPlayer(

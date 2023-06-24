@@ -2,6 +2,12 @@ package models
 
 import "time"
 
+type PlayerDataResponse struct {
+	F2P    []*Account `json:"f2p,omitempty"`
+	NonF2P []*Account `json:"nof2p,omitempty"`
+	Other  []*Account `json:"other,omitempty"`
+}
+
 type Account struct {
 	ID            int64     `json:"robloxId"`
 	Name          string    `json:"robloxName"`
