@@ -73,7 +73,7 @@ func (s *PostgresStore) RemoveAuction(item *models.AuctionAccount) error {
 }
 
 func (s *PostgresStore) GetAuctions() ([]*models.AuctionAccount, error) {
-	query := `SELECT id, robloxId, robloxName, itemType, itemData, startPrice FROM auctions`
+	query := `SELECT id, robloxId, robloxName, itemType, itemData, startPrice FROM auctions ORDER BY id DESC`
 
 	rows, err := s.db.Query(context.Background(), query)
 	if err != nil {
