@@ -183,7 +183,7 @@ func (s *PostgresStore) CreateTables() error {
 			if s.cfg.Prod {
 				baseURL = "https://roblox.kattah.me/mailbox"
 			} else {
-				baseURL = "https://roblox-debug.kattah.me/mailbox"
+				baseURL = "https://playcrate-debug.kattah.me/mailbox"
 			}
 
 			req, err := http.NewRequest("POST", baseURL, bytes.NewBuffer(jsonData))
