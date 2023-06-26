@@ -25,6 +25,13 @@ type Storage interface {
 	ListAuction(*models.AuctionAccount) error
 	RemoveAuction(*models.AuctionAccount) error
 	GetAuctions() ([]*models.AuctionAccount, error)
+	PurchaseAuction(*models.AuctionAccount) error
+	GetAuctionClaims(*models.AuctionAccount) ([]*models.AuctionAccount, error)
+
+	AuctionClaim(*models.AuctionAccount) error
+	AuctionUnlist(*models.AuctionAccount) error
+
+	GetAuctionListing(*models.AuctionAccount) ([]*models.AuctionAccount, error)
 }
 
 type PostgresStore struct {
@@ -84,7 +91,9 @@ func (s *PostgresStore) CreateTables() error {
 			robloxName VARCHAR(255) NOT NULL,
 			itemType VARCHAR(255) NOT NULL,
 			itemData JSONB NOT NULL,
-			startPrice BIGINT NOT NULL
+			startPrice BIGINT NOT NULL,
+			priceType VARCHAR(255) NOT NULL,
+			status VARCHAR(255) NOT NULL DEFAULT 'OPEN'
 		)`,
 	}
 

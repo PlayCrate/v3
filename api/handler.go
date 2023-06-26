@@ -39,7 +39,6 @@ func (s *APIServer) Run() {
 	router.HandleFunc("/leaderboard", Authorization(makeHTTPHandleFunc(s.InsertPlayer), s)).Methods(http.MethodPost)
 	router.HandleFunc("/leaderboard/{which}", Authorization(makeHTTPHandleFunc(s.GetLeaderboards), s)).Methods(http.MethodGet)
 	router.HandleFunc("/auction", Authorization(makeHTTPHandleFunc(s.Auctions), s))
-	router.HandleFunc("/auctionDelete", Authorization(makeHTTPHandleFunc(s.DeleteAuction), s))
 
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		WriteJSON(w, http.StatusOK, ApiResponse{
@@ -96,53 +95,97 @@ func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 	}
 }
 
-func (s *APIServer) DeleteAuction(w http.ResponseWriter, r *http.Request) error {
-	if r.Method == "POST" {
-		AuctionDelete := new(models.AuctionAccount)
-		if err := json.NewDecoder(r.Body).Decode(AuctionDelete); err != nil {
-			return err
-		}
-
-		if err := s.store.RemoveAuction(AuctionDelete); err != nil {
-			return err
-		}
-
-		return WriteJSON(w, http.StatusOK, ApiResponse{
-			Success: true,
-			Data:    "Auction Deleted",
-		})
-	}
-
-	return fmt.Errorf("Invalid Method")
-}
-
 func (s *APIServer) Auctions(w http.ResponseWriter, r *http.Request) error {
-	if r.Method == "GET" {
-		auctions, err := s.store.GetAuctions()
-		if err != nil {
-			return err
-		}
-
-		return WriteJSON(w, http.StatusOK, ApiResponse{
-			Success: true,
-			Data:    auctions,
-		})
-	}
-
 	if r.Method == "POST" {
-		ListAuction := new(models.AuctionAccount)
-		if err := json.NewDecoder(r.Body).Decode(ListAuction); err != nil {
+		Auction := new(models.AuctionAccount)
+		if err := json.NewDecoder(r.Body).Decode(Auction); err != nil {
 			return err
 		}
 
-		if err := s.store.ListAuction(ListAuction); err != nil {
-			return err
+		if Auction.Payload == "" {
+			return fmt.Errorf("Invalid Payload")
 		}
 
-		return WriteJSON(w, http.StatusOK, ApiResponse{
-			Success: true,
-			Data:    ListAuction,
-		})
+		switch Auction.Payload {
+		case "LIST":
+			if err := s.store.ListAuction(Auction); err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    "Auction Inserted",
+			})
+
+		case "READ":
+			auctions, err := s.store.GetAuctions()
+			if err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    auctions,
+			})
+		case "DELETE":
+			if err := s.store.RemoveAuction(Auction); err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    "Auction Deleted",
+			})
+		case "PURCHASE":
+			if err := s.store.PurchaseAuction(Auction); err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    "Auction Purchased",
+			})
+		case "AUCTION_GET_CLAIMS":
+			claims, err := s.store.GetAuctionClaims(Auction)
+
+			if err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    claims,
+			})
+		case "AUCTION_CLAIM":
+			if err := s.store.AuctionClaim(Auction); err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    "Auction Claimed",
+			})
+		case "AUCTION_GET_LISTINGS":
+			listing, err := s.store.GetAuctionListing(Auction)
+
+			if err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    listing,
+			})
+		case "AUCTION_UNLIST":
+			if err := s.store.AuctionUnlist(Auction); err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    "Auction Unlisted",
+			})
+		}
 	}
 
 	return fmt.Errorf("Invalid Method")
