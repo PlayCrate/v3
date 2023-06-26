@@ -130,7 +130,7 @@ func (s *PostgresStore) CreateTables() error {
 			INSERT INTO auction_expired (robloxId, robloxName, itemType, itemData)
 			SELECT robloxId, robloxName, itemType, itemData
 			FROM auctions
-			WHERE listed < $1
+			WHERE listed < $1 AND status = 'OPEN'
 		`
 		_, err := s.db.Exec(context.Background(), moveQuery, cutoffTime)
 		if err != nil {
@@ -140,7 +140,7 @@ func (s *PostgresStore) CreateTables() error {
 
 		deleteQuery := `
 			DELETE FROM auctions
-			WHERE listed < $1
+			WHERE listed < $1 AND status = 'OPEN'
 		`
 		_, err = s.db.Exec(context.Background(), deleteQuery, cutoffTime)
 		if err != nil {
