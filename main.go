@@ -18,7 +18,7 @@ func main() {
 
 	cfg := models.NewConfig(*configFile)
 
-	store, err := storage.NewPostgresStore(context.Background(), cfg.DBConnString)
+	store, err := storage.NewPostgresStore(context.Background(), cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		log.Fatal(err)

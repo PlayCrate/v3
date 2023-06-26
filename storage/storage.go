@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kattah7/v3/models"
+	"github.com/robfig/cron"
 )
 
 const LIMIT = 100
@@ -35,7 +37,8 @@ type Storage interface {
 }
 
 type PostgresStore struct {
-	db *pgxpool.Pool
+	cfg *models.Config
+	db  *pgxpool.Pool
 }
 
 var (
@@ -47,17 +50,20 @@ func (s *PostgresStore) Close() {
 	s.db.Close()
 }
 
-func NewPostgresStore(ctx context.Context, connString string) (*PostgresStore, error) {
+func NewPostgresStore(ctx context.Context, cfg *models.Config) (*PostgresStore, error) {
 	var err error
 
 	pgOnce.Do(func() {
-		db, err := pgxpool.New(ctx, connString)
+		db, err := pgxpool.New(ctx, cfg.DBConnString)
 		if err != nil {
 			err = fmt.Errorf("unable to connect to database: %v", err)
 			return
 		}
 
-		pgInstance = &PostgresStore{db}
+		pgInstance = &PostgresStore{
+			db:  db,
+			cfg: cfg,
+		}
 	})
 
 	if err != nil {
@@ -93,7 +99,15 @@ func (s *PostgresStore) CreateTables() error {
 			itemData JSONB NOT NULL,
 			startPrice BIGINT NOT NULL,
 			priceType VARCHAR(255) NOT NULL,
+			listed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			status VARCHAR(255) NOT NULL DEFAULT 'OPEN'
+		)`,
+		`CREATE TABLE IF NOT EXISTS auction_expired (
+			id SERIAL PRIMARY KEY,
+			robloxId BIGINT NOT NULL,
+			robloxName VARCHAR(255) NOT NULL,
+			itemType VARCHAR(255) NOT NULL,
+			itemData JSONB NOT NULL
 		)`,
 	}
 
@@ -103,6 +117,39 @@ func (s *PostgresStore) CreateTables() error {
 			return err
 		}
 	}
+
+	c := cron.New()
+	c.AddFunc("* * * * * *", func() {
+		currentTime := time.Now().UTC()
+		cutoffDuration := time.Duration(s.cfg.CutOffTime) * time.Second
+		cutoffTime := currentTime.Add(cutoffDuration)
+
+		fmt.Println(cutoffTime)
+
+		moveQuery := `
+			INSERT INTO auction_expired (robloxId, robloxName, itemType, itemData)
+			SELECT robloxId, robloxName, itemType, itemData
+			FROM auctions
+			WHERE listed < $1
+		`
+		_, err := s.db.Exec(context.Background(), moveQuery, cutoffTime)
+		if err != nil {
+			fmt.Println("Failed to move data from auctions to auction_expired:", err)
+			return
+		}
+
+		deleteQuery := `
+			DELETE FROM auctions
+			WHERE listed < $1
+		`
+		_, err = s.db.Exec(context.Background(), deleteQuery, cutoffTime)
+		if err != nil {
+			fmt.Println("Failed to delete rows from auctions:", err)
+			return
+		}
+	})
+
+	c.Start()
 
 	return nil
 }

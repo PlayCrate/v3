@@ -10,6 +10,7 @@ type Config struct {
 	ListenAddress string `json:"listenAddress"`
 	Auth          string `json:"Auth"`
 	DBConnString  string `json:"connString"`
+	CutOffTime    int64  `json:"cutoffTime"`
 }
 
 // NewConfig creates a configuration from file
