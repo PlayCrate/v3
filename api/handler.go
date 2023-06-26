@@ -185,6 +185,26 @@ func (s *APIServer) Auctions(w http.ResponseWriter, r *http.Request) error {
 				Success: true,
 				Data:    "Auction Unlisted",
 			})
+		case "AUCTION_EXPIRE_LIST":
+			expires, err := s.store.AuctionExpireList(Auction)
+
+			if err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    expires,
+			})
+		case "AUCTION_EXPIRE_CLAIM":
+			if err := s.store.AuctionExpireClaim(Auction); err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    "Auction Expire Claimed",
+			})
 		}
 	}
 

@@ -34,6 +34,9 @@ type Storage interface {
 	AuctionUnlist(*models.AuctionAccount) error
 
 	GetAuctionListing(*models.AuctionAccount) ([]*models.AuctionAccount, error)
+
+	AuctionExpireList(*models.AuctionAccount) ([]*models.AuctionAccount, error)
+	AuctionExpireClaim(*models.AuctionAccount) error
 }
 
 type PostgresStore struct {
@@ -119,8 +122,8 @@ func (s *PostgresStore) CreateTables() error {
 	}
 
 	c := cron.New()
-	c.AddFunc("* * * * * *", func() {
-		currentTime := time.Now().UTC()
+	c.AddFunc("* * * * *", func() {
+		currentTime := time.Now().Local()
 		cutoffDuration := time.Duration(s.cfg.CutOffTime) * time.Second
 		cutoffTime := currentTime.Add(cutoffDuration)
 

@@ -278,3 +278,79 @@ func (s *PostgresStore) AuctionUnlist(item *models.AuctionAccount) error {
 
 	return nil
 }
+
+func (s *PostgresStore) AuctionExpireList(item *models.AuctionAccount) ([]*models.AuctionAccount, error) {
+	if item.ID == 0 {
+		return nil, fmt.Errorf("robloxId cannot be empty")
+	}
+
+	query := `SELECT * FROM auction_expired WHERE robloxId = $1 ORDER BY id DESC`
+
+	rows, err := s.db.Query(context.Background(), query, item.ID)
+
+	if err != nil {
+		return nil, fmt.Errorf("Unable to query row: %w", err)
+	}
+
+	defer rows.Close()
+
+	var auctions []*models.AuctionAccount
+
+	for rows.Next() {
+		item := &models.AuctionAccount{}
+		err := rows.Scan(&item.UID, &item.ID, &item.Name, &item.ItemType, &item.ItemData)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to scan row: %w", err)
+		}
+
+		auctions = append(auctions, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("Error iterating rows: %w", err)
+	}
+
+	if len(auctions) == 0 {
+		emptyArray := make([]*models.AuctionAccount, 0)
+
+		return emptyArray, nil
+	}
+
+	return auctions, nil
+}
+
+func (s *PostgresStore) AuctionExpireClaim(item *models.AuctionAccount) error {
+	if item.UID == 0 {
+		return fmt.Errorf("uid cannot be empty")
+	}
+
+	if item.ID == 0 {
+		return fmt.Errorf("id cannot be empty")
+	}
+
+	checkQuery := `SELECT robloxId FROM auction_expired WHERE id = $1`
+
+	var robloxId int64
+	err := s.db.QueryRow(context.Background(), checkQuery, item.UID).Scan(&robloxId)
+
+	if err != nil {
+		return fmt.Errorf("Unable to query row: %w", err)
+	}
+
+	if robloxId != item.ID {
+		return fmt.Errorf("robloxId does not match with id")
+	}
+
+	query := `DELETE FROM auction_expired WHERE id = $1`
+	result, err := s.db.Exec(context.Background(), query, item.UID)
+
+	if err != nil {
+		return fmt.Errorf("Unable to delete row: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("No rows affected")
+	}
+
+	return nil
+}
