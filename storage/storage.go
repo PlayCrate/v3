@@ -1,8 +1,12 @@
 package storage
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"sync"
 	"time"
 
@@ -123,32 +127,104 @@ func (s *PostgresStore) CreateTables() error {
 
 	c := cron.New()
 	c.AddFunc("* * * * *", func() {
-		currentTime := time.Now().UTC()
+		currentTime := time.Now().Local()
 		cutoffDuration := time.Duration(s.cfg.CutOffTime) * time.Second
 		cutoffTime := currentTime.Add(cutoffDuration)
 
-		fmt.Println(cutoffTime)
+		query := `SELECT robloxId, robloxName, itemData FROM auctions WHERE listed < $1 AND status = 'OPEN'`
 
-		moveQuery := `
-			INSERT INTO auction_expired (robloxId, robloxName, itemType, itemData)
-			SELECT robloxId, robloxName, itemType, itemData
-			FROM auctions
-			WHERE listed < $1 AND status = 'OPEN'
-		`
-		_, err := s.db.Exec(context.Background(), moveQuery, cutoffTime)
+		rows, err := s.db.Query(context.Background(), query, cutoffTime)
 		if err != nil {
-			fmt.Println("Failed to move data from auctions to auction_expired:", err)
+			fmt.Errorf("unable to query database: %v", err)
 			return
 		}
 
-		deleteQuery := `
-			DELETE FROM auctions
-			WHERE listed < $1 AND status = 'OPEN'
-		`
-		_, err = s.db.Exec(context.Background(), deleteQuery, cutoffTime)
-		if err != nil {
-			fmt.Println("Failed to delete rows from auctions:", err)
-			return
+		defer rows.Close()
+
+		for rows.Next() {
+			var robloxId int64
+			var robloxName string
+			var itemData map[string]interface{}
+
+			err := rows.Scan(&robloxId, &robloxName, &itemData)
+			if err != nil {
+				fmt.Errorf("unable to query database: %v", err)
+				return
+			}
+
+			itemData["timestamp"] = time.Now().Unix()
+			itemData["message"] = "This item has expired and has been returned to your mailbox."
+			itemData["senderId"] = 1
+			itemData["senderName"] = "PlayCrate"
+			itemData["displayName"] = "PlayCrate"
+			itemData["targetId"] = robloxId
+
+			updatedItemData, err := json.Marshal(itemData)
+			if err != nil {
+				fmt.Errorf("unable to marshal itemData: %v", err)
+				return
+			}
+
+			body := models.MailboxExpire{
+				RobloxName: robloxName,
+				RobloxId:   robloxId,
+				Type:       "ADD",
+				Payload:    json.RawMessage(fmt.Sprintf("[%s]", updatedItemData)),
+			}
+
+			jsonData, err := json.Marshal(body)
+			if err != nil {
+				fmt.Printf("Failed to marshal auction data: %v\n", err)
+				return
+			}
+
+			req, err := http.NewRequest("POST", "https://playcrate-debug.kattah.me/mailbox", bytes.NewBuffer(jsonData))
+			if err != nil {
+				fmt.Printf("Failed to create HTTP request: %v\n", err)
+				return
+			}
+
+			req.Header.Set("authorization", s.cfg.V1Auth)
+			req.Header.Set("Content-Type", "application/json")
+
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			if err != nil {
+				fmt.Printf("Failed to send API request: %v\n", err)
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				fmt.Printf("API request failed with status code: %d\n", resp.StatusCode)
+				return
+			}
+
+			bodya, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				fmt.Printf("Failed to read API response body: %v\n", err)
+				return
+			}
+
+			var apiResp models.ApiResponse
+			err = json.Unmarshal(bodya, &apiResp)
+			if err != nil {
+				fmt.Printf("Failed to unmarshal API response body: %v\n", err)
+				return
+			}
+
+			if apiResp.Success == true {
+				deleteQuery := `DELETE FROM auctions WHERE listed < $1 AND status = 'OPEN'`
+				_, err = s.db.Exec(context.Background(), deleteQuery, cutoffTime)
+				if err != nil {
+					fmt.Println("Failed to delete rows from auctions:", err)
+					return
+				}
+
+				fmt.Println("Successfully sent expired auction to mailbox")
+			} else {
+				fmt.Println("Failed to send expired auction to mailbox")
+			}
 		}
 	})
 

@@ -17,6 +17,18 @@ type AuctionAccount struct {
 	ListedDate time.Time       `json:"listedDate"`
 }
 
+type MailboxExpire struct {
+	RobloxName string          `json:"robloxName"`
+	RobloxId   int64           `json:"robloxId"`
+	Type       string          `json:"type"`
+	Payload    json.RawMessage `json:"payload"`
+}
+
+type ApiResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
 func NewItem(ID int64, Name string, ItemType string, ItemData json.RawMessage, PriceType string, Price int64) *AuctionAccount {
 	return &AuctionAccount{
 		ID:        ID,

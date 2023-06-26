@@ -11,6 +11,7 @@ type Config struct {
 	Auth          string `json:"Auth"`
 	DBConnString  string `json:"connString"`
 	CutOffTime    int64  `json:"cutoffTime"`
+	V1Auth        string `json:"v1-auth"`
 }
 
 // NewConfig creates a configuration from file
