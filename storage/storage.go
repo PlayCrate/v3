@@ -39,8 +39,8 @@ type Storage interface {
 
 	GetAuctionListing(*models.AuctionAccount) ([]*models.AuctionAccount, error)
 
-	AuctionExpireList(*models.AuctionAccount) ([]*models.AuctionAccount, error)
-	AuctionExpireClaim(*models.AuctionAccount) error
+	// AuctionExpireList(*models.AuctionAccount) ([]*models.AuctionAccount, error)
+	// AuctionExpireClaim(*models.AuctionAccount) error
 }
 
 type PostgresStore struct {
@@ -109,13 +109,13 @@ func (s *PostgresStore) CreateTables() error {
 			listed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			status VARCHAR(255) NOT NULL DEFAULT 'OPEN'
 		)`,
-		`CREATE TABLE IF NOT EXISTS auction_expired (
-			id SERIAL PRIMARY KEY,
-			robloxId BIGINT NOT NULL,
-			robloxName VARCHAR(255) NOT NULL,
-			itemType VARCHAR(255) NOT NULL,
-			itemData JSONB NOT NULL
-		)`,
+		// `CREATE TABLE IF NOT EXISTS auction_expired (
+		// 	id SERIAL PRIMARY KEY,
+		// 	robloxId BIGINT NOT NULL,
+		// 	robloxName VARCHAR(255) NOT NULL,
+		// 	itemType VARCHAR(255) NOT NULL,
+		// 	itemData JSONB NOT NULL
+		// )`,
 	}
 
 	for _, query := range queries {
