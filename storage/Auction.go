@@ -209,7 +209,7 @@ func (s *PostgresStore) GetAuctionListing(item *models.AuctionAccount) ([]*model
 		return nil, fmt.Errorf("robloxId cannot be empty")
 	}
 
-	query := `SELECT id, robloxId, robloxName, itemType, itemData, startPrice, priceType FROM auctions WHERE status = 'OPEN' AND robloxId = $1 ORDER BY id DESC`
+	query := `SELECT id, robloxId, robloxName, itemType, itemData, startPrice, priceType, listed FROM auctions WHERE status = 'OPEN' AND robloxId = $1 ORDER BY id DESC`
 
 	rows, err := s.db.Query(context.Background(), query, item.ID)
 	if err != nil {
@@ -222,7 +222,7 @@ func (s *PostgresStore) GetAuctionListing(item *models.AuctionAccount) ([]*model
 
 	for rows.Next() {
 		item := &models.AuctionAccount{}
-		err := rows.Scan(&item.UID, &item.ID, &item.Name, &item.ItemType, &item.ItemData, &item.Price, &item.PriceType)
+		err := rows.Scan(&item.UID, &item.ID, &item.Name, &item.ItemType, &item.ItemData, &item.Price, &item.PriceType, &item.ListedDate)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to scan row: %w", err)
 		}

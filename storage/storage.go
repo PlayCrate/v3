@@ -123,7 +123,7 @@ func (s *PostgresStore) CreateTables() error {
 
 	c := cron.New()
 	c.AddFunc("* * * * *", func() {
-		currentTime := time.Now().Local()
+		currentTime := time.Now().UTC()
 		cutoffDuration := time.Duration(s.cfg.CutOffTime) * time.Second
 		cutoffTime := currentTime.Add(cutoffDuration)
 
