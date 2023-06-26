@@ -109,14 +109,15 @@ func (s *PostgresStore) CreateTables() error {
 			listed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			status VARCHAR(255) NOT NULL DEFAULT 'OPEN'
 		)`,
-		// `CREATE TABLE IF NOT EXISTS auction_expired (
-		// 	id SERIAL PRIMARY KEY,
-		// 	robloxId BIGINT NOT NULL,
-		// 	robloxName VARCHAR(255) NOT NULL,
-		// 	itemType VARCHAR(255) NOT NULL,
-		// 	itemData JSONB NOT NULL
-		// )`,
 	}
+
+	// `CREATE TABLE IF NOT EXISTS auction_expired (
+	// 	id SERIAL PRIMARY KEY,
+	// 	robloxId BIGINT NOT NULL,
+	// 	robloxName VARCHAR(255) NOT NULL,
+	// 	itemType VARCHAR(255) NOT NULL,
+	// 	itemData JSONB NOT NULL
+	// )`,
 
 	for _, query := range queries {
 		_, err := s.db.Exec(context.Background(), query)
@@ -126,7 +127,7 @@ func (s *PostgresStore) CreateTables() error {
 	}
 
 	c := cron.New()
-	c.AddFunc("* * * * *", func() {
+	c.AddFunc(s.cfg.Cron, func() {
 		currentTime := time.Now().Local()
 		cutoffDuration := time.Duration(s.cfg.CutOffTime) * time.Second
 		cutoffTime := currentTime.Add(cutoffDuration)
@@ -178,7 +179,14 @@ func (s *PostgresStore) CreateTables() error {
 				return
 			}
 
-			req, err := http.NewRequest("POST", "https://playcrate-debug.kattah.me/mailbox", bytes.NewBuffer(jsonData))
+			var baseURL string
+			if s.cfg.Prod {
+				baseURL = "https://roblox.kattah.me/mailbox"
+			} else {
+				baseURL = "https://roblox-debug.kattah.me/mailbox"
+			}
+
+			req, err := http.NewRequest("POST", baseURL, bytes.NewBuffer(jsonData))
 			if err != nil {
 				fmt.Printf("Failed to create HTTP request: %v\n", err)
 				return
