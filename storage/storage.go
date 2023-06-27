@@ -41,6 +41,9 @@ type Storage interface {
 
 	// AuctionExpireList(*models.AuctionAccount) ([]*models.AuctionAccount, error)
 	// AuctionExpireClaim(*models.AuctionAccount) error
+
+	InsertPetsExistance(*models.PetsExistance) error
+	GetPetsExistance() ([]*models.GetPetsExistance, error)
 }
 
 type PostgresStore struct {
@@ -108,6 +111,13 @@ func (s *PostgresStore) CreateTables() error {
 			priceType VARCHAR(255) NOT NULL,
 			listed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			status VARCHAR(255) NOT NULL DEFAULT 'OPEN'
+		)`,
+		`CREATE TABLE IF NOT EXISTS pets_exist (
+			id SERIAL PRIMARY KEY,
+			robloxId BIGINT NOT NULL,
+			petId VARCHAR(255) NOT NULL,
+			petCount BIGINT NOT NULL DEFAULT 0,
+			CONSTRAINT uc_robloxid_petid UNIQUE (robloxId, petId)
 		)`,
 	}
 

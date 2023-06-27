@@ -39,6 +39,7 @@ func (s *APIServer) Run() {
 	router.HandleFunc("/leaderboard", Authorization(makeHTTPHandleFunc(s.InsertPlayer), s)).Methods(http.MethodPost)
 	router.HandleFunc("/leaderboard/{which}", Authorization(makeHTTPHandleFunc(s.GetLeaderboards), s)).Methods(http.MethodGet)
 	router.HandleFunc("/auction", Authorization(makeHTTPHandleFunc(s.Auctions), s))
+	router.HandleFunc("/pets-exist", Authorization(makeHTTPHandleFunc(s.PetsExistance), s))
 
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		WriteJSON(w, http.StatusOK, ApiResponse{
@@ -93,6 +94,47 @@ func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 			WriteJSON(w, http.StatusOK, ApiResponse{Error: err.Error()})
 		}
 	}
+}
+
+func (s *APIServer) PetsExistance(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "POST" {
+		InsertAcc := new(models.PetsExistance)
+
+		if err := json.NewDecoder(r.Body).Decode(InsertAcc); err != nil {
+			return err
+		}
+
+		if InsertAcc.Payload == "" {
+			return fmt.Errorf("Missing Payload")
+		}
+
+		switch InsertAcc.Payload {
+		case "INSERT_PETS_EXISTANCE":
+			if err := s.store.InsertPetsExistance(InsertAcc); err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    "Pets Inserted",
+			})
+		case "READ_PETS_EXISTANCE":
+			pets, err := s.store.GetPetsExistance()
+
+			if err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    pets,
+			})
+		default:
+			return fmt.Errorf("Invalid Payload")
+		}
+	}
+
+	return fmt.Errorf("Invalid Method")
 }
 
 func (s *APIServer) Auctions(w http.ResponseWriter, r *http.Request) error {
