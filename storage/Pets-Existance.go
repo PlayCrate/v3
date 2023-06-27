@@ -16,6 +16,12 @@ func (s *PostgresStore) InsertPetsExistance(pet *models.PetsExistance) error {
 		return fmt.Errorf("pets cannot be empty")
 	}
 
+	deleteQuery := `DELETE FROM pets_exist WHERE robloxId = $1`
+	_, err := s.db.Exec(context.Background(), deleteQuery, pet.RobloxID)
+	if err != nil {
+		return err
+	}
+
 	for _, v := range pet.Pets {
 		for petId, petCount := range v {
 			if petId == "" {
