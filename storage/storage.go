@@ -44,6 +44,7 @@ type Storage interface {
 
 	InsertPetsExistance(*models.PetsExistance) error
 	GetPetsExistance() ([]*models.GetPetsExistance, error)
+	DeletePetsExistence(*models.PetsExistance) error
 }
 
 type PostgresStore struct {

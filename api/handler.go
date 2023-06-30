@@ -129,6 +129,15 @@ func (s *APIServer) PetsExistance(w http.ResponseWriter, r *http.Request) error 
 				Success: true,
 				Data:    pets,
 			})
+		case "DELETE_PETS_EXISTANCE":
+			if err := s.store.DeletePetsExistence(InsertAcc); err != nil {
+				return err
+			}
+
+			return WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    "Pets Removed",
+			})
 		default:
 			return fmt.Errorf("Invalid Payload")
 		}

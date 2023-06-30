@@ -87,3 +87,21 @@ func (s *PostgresStore) GetPetsExistance() ([]*models.GetPetsExistance, error) {
 
 	return pets, nil
 }
+
+func (s *PostgresStore) DeletePetsExistence(pet *models.PetsExistance) error {
+	if pet.RobloxID == 0 {
+		return fmt.Errorf("robloxId cannot be empty")
+	}
+
+	deleteQuery := `DELETE FROM pets_exist WHERE robloxId = $1`
+	del, err := s.db.Exec(context.Background(), deleteQuery, pet.RobloxID)
+	if err != nil {
+		return err
+	}
+
+	if del.RowsAffected() == 0 {
+		return fmt.Errorf("robloxId %d does not exist", pet.RobloxID)
+	}
+
+	return nil
+}
