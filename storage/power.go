@@ -6,8 +6,8 @@ import (
 	"github.com/kattah7/v3/models"
 )
 
-func (s *PostgresStore) GetPower() (*PlayerDataResponse, error) {
-	fullResponse := &PlayerDataResponse{
+func (s *PostgresStore) GetPower() (*models.PlayerDataResponse, error) {
+	fullResponse := &models.PlayerDataResponse{
 		F2P:    make([]*models.Account, 0),
 		NonF2P: make([]*models.Account, 0),
 	}

@@ -6,8 +6,8 @@ import (
 	"github.com/kattah7/v3/models"
 )
 
-func (s *PostgresStore) GetRobux() (*PlayerDataResponse, error) {
-	fullResponse := &PlayerDataResponse{
+func (s *PostgresStore) GetRobux() (*models.PlayerDataResponse, error) {
+	fullResponse := &models.PlayerDataResponse{
 		Other: make([]*models.Account, 0),
 	}
 
