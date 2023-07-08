@@ -40,7 +40,7 @@ func (s *APIServer) Run() {
 	router.HandleFunc("/leaderboard/{which}", Authorization(makeHTTPHandleFunc(s.GetLeaderboards), s)).Methods(http.MethodGet)
 	router.HandleFunc("/auction", Authorization(makeHTTPHandleFunc(s.Auctions), s))
 	router.HandleFunc("/pets-exist", Authorization(makeHTTPHandleFunc(s.PetsExistance), s))
-	router.Handle("/lb-lookup", Authorization(makeHTTPHandleFunc(s.LeaderboardLookup), s))
+	router.HandleFunc("/lb-lookup", Authorization(makeHTTPHandleFunc(s.LeaderboardLookup), s))
 
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		WriteJSON(w, http.StatusOK, ApiResponse{
