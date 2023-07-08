@@ -25,6 +25,7 @@ type Storage interface {
 	GetRobux() (*models.PlayerDataResponse, error)
 	GetPlaytime() (*models.PlayerDataResponse, error)
 
+	GetSpecificPlayer(int64) (*models.AccountLookup, error)
 	InsertAccounts(*models.Account) error
 	Close()
 

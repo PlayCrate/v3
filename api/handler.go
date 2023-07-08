@@ -40,6 +40,7 @@ func (s *APIServer) Run() {
 	router.HandleFunc("/leaderboard/{which}", Authorization(makeHTTPHandleFunc(s.GetLeaderboards), s)).Methods(http.MethodGet)
 	router.HandleFunc("/auction", Authorization(makeHTTPHandleFunc(s.Auctions), s))
 	router.HandleFunc("/pets-exist", Authorization(makeHTTPHandleFunc(s.PetsExistance), s))
+	router.Handle("/lb-lookup", Authorization(makeHTTPHandleFunc(s.LeaderboardLookup), s))
 
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		WriteJSON(w, http.StatusOK, ApiResponse{
@@ -94,6 +95,33 @@ func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 			WriteJSON(w, http.StatusOK, ApiResponse{Error: err.Error()})
 		}
 	}
+}
+
+func (s *APIServer) LeaderboardLookup(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "POST" {
+		InsertAcc := new(models.AccountLookup)
+
+		if err := json.NewDecoder(r.Body).Decode(InsertAcc); err != nil {
+			return err
+		}
+
+		if InsertAcc.RobloxID == 0 {
+			return fmt.Errorf("Missing robloxId")
+		}
+
+		acc, err := s.store.GetSpecificPlayer(InsertAcc.RobloxID)
+
+		if err != nil {
+			return err
+		}
+
+		return WriteJSON(w, http.StatusOK, ApiResponse{
+			Success: true,
+			Data:    acc,
+		})
+	}
+
+	return fmt.Errorf("Invalid Method")
 }
 
 func (s *APIServer) PetsExistance(w http.ResponseWriter, r *http.Request) error {

@@ -14,7 +14,7 @@ type AuctionAccount struct {
 	ItemData   json.RawMessage `json:"itemData"`
 	PriceType  string          `json:"priceType"`
 	Price      int64           `json:"startPrice"`
-	ListedDate time.Time       `json:"listedDate"`
+	ListedDate time.Time       `json:"listedDate,omitempty"`
 }
 
 type MailboxExpire struct {
