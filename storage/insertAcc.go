@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/kattah7/v3/models"
 )
@@ -27,7 +26,6 @@ func (s *PostgresStore) InsertAccounts(acc *models.Account) error {
 	if err != nil {
 		return fmt.Errorf("unable to insert row: %w", err)
 	}
-	log.Println("Insert successful", acc.Name)
 
 	return nil
 }

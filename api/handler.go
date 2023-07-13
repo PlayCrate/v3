@@ -91,6 +91,8 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 
 func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.Method, r.URL.Path)
+
 		if err := f(w, r); err != nil {
 			WriteJSON(w, http.StatusOK, ApiResponse{Error: err.Error()})
 		}
