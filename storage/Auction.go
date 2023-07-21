@@ -101,7 +101,7 @@ func (s *PostgresStore) RemoveAuction(item *models.AuctionAccount) error {
 }
 
 func (s *PostgresStore) GetAuctions() ([]*models.AuctionAccount, error) {
-	query := `SELECT id, robloxId, robloxName, itemType, itemData, startPrice, priceType FROM auctions WHERE status = 'OPEN' ORDER BY id DESC`
+	query := `SELECT id, robloxId, robloxName, itemType, itemData, startPrice, priceType, listed FROM auctions WHERE status = 'OPEN' ORDER BY id DESC`
 
 	rows, err := s.db.Query(context.Background(), query)
 	if err != nil {
@@ -114,7 +114,7 @@ func (s *PostgresStore) GetAuctions() ([]*models.AuctionAccount, error) {
 
 	for rows.Next() {
 		item := &models.AuctionAccount{}
-		err := rows.Scan(&item.UID, &item.ID, &item.Name, &item.ItemType, &item.ItemData, &item.Price, &item.PriceType)
+		err := rows.Scan(&item.UID, &item.ID, &item.Name, &item.ItemType, &item.ItemData, &item.Price, &item.PriceType, &item.ListedDate)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to scan row: %w", err)
 		}
