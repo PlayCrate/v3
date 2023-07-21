@@ -18,30 +18,25 @@ import (
 const LIMIT = 100
 
 type Storage interface {
+	Close()
+
 	GetSecrets() (*models.PlayerDataResponse, error)
 	GetEggs() (*models.PlayerDataResponse, error)
 	GetBubbles() (*models.PlayerDataResponse, error)
 	GetPower() (*models.PlayerDataResponse, error)
 	GetRobux() (*models.PlayerDataResponse, error)
 	GetPlaytime() (*models.PlayerDataResponse, error)
-
 	GetSpecificPlayer(int64) (*models.AccountLookup, error)
 	InsertAccounts(*models.Account) error
-	Close()
 
 	ListAuction(*models.AuctionAccount) error
 	RemoveAuction(*models.AuctionAccount) error
 	GetAuctions() ([]*models.AuctionAccount, error)
 	PurchaseAuction(*models.AuctionAccount) error
 	GetAuctionClaims(*models.AuctionAccount) ([]*models.AuctionAccount, error)
-
 	AuctionClaim(*models.AuctionAccount) error
 	AuctionUnlist(*models.AuctionAccount) error
-
 	GetAuctionListing(*models.AuctionAccount) ([]*models.AuctionAccount, error)
-
-	// AuctionExpireList(*models.AuctionAccount) ([]*models.AuctionAccount, error)
-	// AuctionExpireClaim(*models.AuctionAccount) error
 
 	InsertPetsExistance(*models.PetsExistance) error
 	GetPetsExistance() ([]*models.GetPetsExistance, error)
@@ -122,14 +117,6 @@ func (s *PostgresStore) CreateTables() error {
 			CONSTRAINT uc_robloxid_petid UNIQUE (robloxId, petId)
 		)`,
 	}
-
-	// `CREATE TABLE IF NOT EXISTS auction_expired (
-	// 	id SERIAL PRIMARY KEY,
-	// 	robloxId BIGINT NOT NULL,
-	// 	robloxName VARCHAR(255) NOT NULL,
-	// 	itemType VARCHAR(255) NOT NULL,
-	// 	itemData JSONB NOT NULL
-	// )`,
 
 	for _, query := range queries {
 		_, err := s.db.Exec(context.Background(), query)
