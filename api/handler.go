@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kattah7/v3/models"
 	"github.com/kattah7/v3/storage"
+	"github.com/redis/go-redis/v9"
 )
 
 type apiFunc func(http.ResponseWriter, *http.Request, *APIServer) error
@@ -17,6 +19,7 @@ type APIServer struct {
 	listenAddr string
 	store      storage.Storage
 	cfg        *models.Config
+	rdb        *redis.Client
 }
 
 type ApiResponse struct {
@@ -25,11 +28,12 @@ type ApiResponse struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-func NewAPIServer(cfg *models.Config, store storage.Storage) *APIServer {
+func NewAPIServer(cfg *models.Config, store storage.Storage, rdb *redis.Client) *APIServer {
 	return &APIServer{
 		listenAddr: cfg.ListenAddress,
 		store:      store,
 		cfg:        cfg,
+		rdb:        rdb,
 	}
 }
 
@@ -177,15 +181,20 @@ func PetsExistance(w http.ResponseWriter, r *http.Request, s *APIServer) error {
 				Data:    "Pets Inserted",
 			})
 		case "READ_PETS_EXISTANCE":
-			pets, err := s.store.GetPetsExistance()
+			cached, err := s.rdb.Get(context.Background(), "pets-exist").Result()
+			if err != nil {
+				return err
+			}
 
+			var cachedPets []*models.GetPetsExistance
+			err = json.Unmarshal([]byte(cached), &cachedPets)
 			if err != nil {
 				return err
 			}
 
 			return s.WriteJSON(w, http.StatusOK, ApiResponse{
 				Success: true,
-				Data:    pets,
+				Data:    cachedPets,
 			})
 		case "DELETE_PETS_EXISTANCE":
 			if err := s.store.DeletePetsExistence(InsertAcc); err != nil {
@@ -303,26 +312,153 @@ func Auctions(w http.ResponseWriter, r *http.Request, s *APIServer) error {
 func GetLeaderboards(w http.ResponseWriter, r *http.Request, s *APIServer) error {
 	vars := mux.Vars(r)["which"]
 
-	leaderboards := map[string]func() (*models.PlayerDataResponse, error){
-		"eggs":     s.store.GetEggs,
-		"bubbles":  s.store.GetBubbles,
-		"secrets":  s.store.GetSecrets,
-		"power":    s.store.GetPower,
-		"robux":    s.store.GetRobux,
-		"playtime": s.store.GetPlaytime,
-	}
+	switch vars {
+	case "eggs":
+		{
+			cached, err := s.rdb.Get(context.Background(), "eggs-lb").Result()
+			if err != nil {
+				return err
+			}
+			cachedEggs := new(any)
+			err = json.Unmarshal([]byte(cached), &cachedEggs)
 
-	if leaderboardFunc, ok := leaderboards[vars]; ok {
-		data, err := leaderboardFunc()
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
+
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    cachedEggs,
+			})
 		}
+	case "bubbles":
+		{
+			cached, err := s.rdb.Get(context.Background(), "bubbles-lb").Result()
+			if err != nil {
+				return err
+			}
+			cachedBubbles := new(any)
+			err = json.Unmarshal([]byte(cached), &cachedBubbles)
 
-		return s.WriteJSON(w, http.StatusOK, ApiResponse{
-			Success: true,
-			Data:    data,
-		})
+			if err != nil {
+				return err
+			}
+
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    cachedBubbles,
+			})
+		}
+	case "secrets":
+		{
+			cached, err := s.rdb.Get(context.Background(), "secrets-lb").Result()
+			if err != nil {
+				return err
+			}
+
+			cachedSecrets := new(any)
+			err = json.Unmarshal([]byte(cached), &cachedSecrets)
+
+			if err != nil {
+				return err
+			}
+
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    cachedSecrets,
+			})
+		}
+	case "power":
+		{
+			cached, err := s.rdb.Get(context.Background(), "power-lb").Result()
+			if err != nil {
+				return err
+			}
+
+			cachedPower := new(any)
+			err = json.Unmarshal([]byte(cached), &cachedPower)
+
+			if err != nil {
+				return err
+			}
+
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    cachedPower,
+			})
+		}
+	case "robux":
+		{
+			cached, err := s.rdb.Get(context.Background(), "robux-lb").Result()
+			if err != nil {
+				return err
+			}
+
+			cachedRobux := new(any)
+			err = json.Unmarshal([]byte(cached), &cachedRobux)
+
+			if err != nil {
+				return err
+			}
+
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    cachedRobux,
+			})
+		}
+	case "playtime":
+		{
+			cached, err := s.rdb.Get(context.Background(), "playtime-lb").Result()
+			if err != nil {
+				return err
+			}
+
+			cachedPlaytime := new(any)
+			err = json.Unmarshal([]byte(cached), &cachedPlaytime)
+			if err != nil {
+				return err
+			}
+
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    cachedPlaytime,
+			})
+		}
+	default:
+		return fmt.Errorf("Invalid Leaderboard")
 	}
 
-	return fmt.Errorf("Invalid Leaderboard")
+	// cached, err := s.rdb.Get(context.Background(), "eggs-lb").Result()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// var cachedEggs []*models.PlayerDataResponse
+	// err = json.Unmarshal([]byte(cached), &cachedEggs)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// leaderboards := map[string]func() (*models.PlayerDataResponse, error){
+	// 	"eggs":     s.store.GetEggs,
+	// 	"bubbles":  s.store.GetBubbles,
+	// 	"secrets":  s.store.GetSecrets,
+	// 	"power":    s.store.GetPower,
+	// 	"robux":    s.store.GetRobux,
+	// 	"playtime": s.store.GetPlaytime,
+	// }
+
+	// if leaderboardFunc, ok := leaderboards[vars]; ok {
+	// 	data, err := leaderboardFunc()
+	// 	if err != nil {
+	// 		return err
+	// 	}
+
+	// 	return s.WriteJSON(w, http.StatusOK, ApiResponse{
+	// 		Success: true,
+	// 		Data:    data,
+	// 	})
+	// }
+
+	// return fmt.Errorf("Invalid Leaderboard")
 }

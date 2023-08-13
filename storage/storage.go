@@ -5,7 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -13,6 +14,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kattah7/v3/models"
 	"github.com/robfig/cron"
+
+	"github.com/redis/go-redis/v9"
 )
 
 const LIMIT = 100
@@ -46,6 +49,7 @@ type Storage interface {
 type PostgresStore struct {
 	cfg *models.Config
 	db  *pgxpool.Pool
+	rdb *redis.Client
 }
 
 var (
@@ -57,7 +61,7 @@ func (s *PostgresStore) Close() {
 	s.db.Close()
 }
 
-func NewPostgresStore(ctx context.Context, cfg *models.Config) (*PostgresStore, error) {
+func NewPostgresStore(ctx context.Context, cfg *models.Config, rdb *redis.Client) (*PostgresStore, error) {
 	var err error
 
 	pgOnce.Do(func() {
@@ -70,6 +74,7 @@ func NewPostgresStore(ctx context.Context, cfg *models.Config) (*PostgresStore, 
 		pgInstance = &PostgresStore{
 			db:  db,
 			cfg: cfg,
+			rdb: rdb,
 		}
 	})
 
@@ -207,7 +212,7 @@ func (s *PostgresStore) CreateTables() error {
 				return
 			}
 
-			bodya, err := ioutil.ReadAll(resp.Body)
+			bodya, err := io.ReadAll(resp.Body)
 			if err != nil {
 				fmt.Printf("Failed to read API response body: %v\n", err)
 				return
@@ -235,7 +240,100 @@ func (s *PostgresStore) CreateTables() error {
 		}
 	})
 
+	cacheDB := func() {
+		pets, err := s.GetPetsExistance()
+		if err != nil {
+			fmt.Println("Failed to get pets:", err)
+		} else {
+			if err := cacheData(s, "pets-exist", pets); err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		// Cache eggs data
+		eggslb, err := s.GetEggs()
+		if err != nil {
+			fmt.Println("Failed to get eggs:", err)
+		} else {
+			if err := cacheData(s, "eggs-lb", eggslb); err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		// Cache secrets data
+		secretslb, err := s.GetSecrets()
+		if err != nil {
+			fmt.Println("Failed to get secrets:", err)
+		} else {
+			if err := cacheData(s, "secrets-lb", secretslb); err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		// Cache bubbles data
+		bubbleslb, err := s.GetBubbles()
+		if err != nil {
+			fmt.Println("Failed to get bubbles:", err)
+		} else {
+			if err := cacheData(s, "bubbles-lb", bubbleslb); err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		// Cache power data
+		powerlb, err := s.GetPower()
+		if err != nil {
+			fmt.Println("Failed to get power:", err)
+		} else {
+			if err := cacheData(s, "power-lb", powerlb); err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		// Cache robux data
+		robuxlb, err := s.GetRobux()
+		if err != nil {
+			fmt.Println("Failed to get robux:", err)
+		} else {
+			if err := cacheData(s, "robux-lb", robuxlb); err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		// Cache playtime data
+		playtimelb, err := s.GetPlaytime()
+		if err != nil {
+			fmt.Println("Failed to get playtime:", err)
+		} else {
+			if err := cacheData(s, "playtime-lb", playtimelb); err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		fmt.Println("Successfully updated pets and eggs")
+	}
+
+	c.AddFunc("@every 1m", func() {
+		cacheDB()
+	})
+
+	go cacheDB()
+
 	c.Start()
+
+	return nil
+}
+
+func cacheData(s *PostgresStore, key string, data interface{}) error {
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("Failed to marshal data: %w", err)
+	}
+
+	err = s.rdb.Set(context.Background(), key, dataJSON, 0).Err()
+	if err != nil {
+		return fmt.Errorf("Failed to set data: %w", err)
+	}
 
 	return nil
 }
