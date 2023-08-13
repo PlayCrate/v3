@@ -28,10 +28,18 @@ func main() {
 
 	cfg := models.NewConfig(*configFile)
 
+	var DBNumber int = 0
+	if cfg.Prod {
+		log.Println("Running in production mode")
+	} else {
+		DBNumber = 1
+		log.Println("Running in development mode")
+	}
+
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Password: "",       // no password set
+		DB:       DBNumber, // use default DB
 	})
 
 	store, err := storage.NewPostgresStore(ctx, cfg, rdb)
