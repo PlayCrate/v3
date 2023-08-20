@@ -2,12 +2,24 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/kattah7/v3/models"
 )
 
 func (s *PostgresStore) GetSpecificPlayer(robloxId int64) (*models.AccountLookup, error) {
+
+	stringId := fmt.Sprintf("%d", robloxId)
+	data, rdbErr := s.rdb.Get(context.Background(), stringId).Result()
+	if rdbErr == nil {
+		account := &models.AccountLookup{}
+		if err := json.Unmarshal([]byte(data), account); err != nil {
+			return nil, err
+		}
+		return account, nil
+	}
+
 	query := `
 	SELECT
 		robloxId, robloxName, secrets, eggs, bubbles, power, playtime, robux,
@@ -51,6 +63,7 @@ func (s *PostgresStore) GetSpecificPlayer(robloxId int64) (*models.AccountLookup
 	if err != nil {
 		return nil, err
 	}
+	go cacheData(s, stringId, account, 60)
 
 	return account, nil
 }

@@ -324,13 +324,18 @@ func (s *PostgresStore) CreateTables() error {
 	return nil
 }
 
-func cacheData(s *PostgresStore, key string, data interface{}) error {
+func cacheData(s *PostgresStore, key string, data interface{}, TTL ...int) error {
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("Failed to marshal data: %w", err)
 	}
 
-	err = s.rdb.Set(context.Background(), key, dataJSON, 0).Err()
+	var expiration time.Duration
+	if len(TTL) > 0 {
+		expiration = time.Duration(TTL[0]) * time.Second
+	}
+
+	err = s.rdb.Set(context.Background(), key, dataJSON, expiration).Err()
 	if err != nil {
 		return fmt.Errorf("Failed to set data: %w", err)
 	}
