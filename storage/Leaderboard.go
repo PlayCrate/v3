@@ -63,7 +63,8 @@ func (s *PostgresStore) GetSpecificPlayer(robloxId int64) (*models.AccountLookup
 	if err != nil {
 		return nil, err
 	}
-	go cacheData(s, stringId, account, 60)
+
+	cacheData(s, stringId, account, 60)
 
 	return account, nil
 }

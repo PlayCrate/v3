@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/kattah7/v3/models"
@@ -16,10 +18,10 @@ import (
 type apiFunc func(http.ResponseWriter, *http.Request, *APIServer) error
 
 type APIServer struct {
-	listenAddr string
-	store      storage.Storage
-	cfg        *models.Config
-	rdb        *redis.Client
+	ctx   context.Context
+	store storage.Storage
+	cfg   *models.Config
+	rdb   *redis.Client
 }
 
 type ApiResponse struct {
@@ -28,12 +30,12 @@ type ApiResponse struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-func NewAPIServer(cfg *models.Config, store storage.Storage, rdb *redis.Client) *APIServer {
+func NewAPIServer(ctx context.Context, cfg *models.Config, store storage.Storage, rdb *redis.Client) *APIServer {
 	return &APIServer{
-		listenAddr: cfg.ListenAddress,
-		store:      store,
-		cfg:        cfg,
-		rdb:        rdb,
+		ctx:   ctx,
+		store: store,
+		cfg:   cfg,
+		rdb:   rdb,
 	}
 }
 
@@ -63,8 +65,18 @@ func (s *APIServer) Run() {
 		})
 	})
 
-	log.Println("JSON API server running on port", s.listenAddr)
-	http.ListenAndServe(s.listenAddr, router)
+	srv := &http.Server{
+		Handler:      router,
+		Addr:         s.cfg.ListenAddress,
+		WriteTimeout: 1 * time.Second,
+		ReadTimeout:  1 * time.Second,
+		BaseContext: func(l net.Listener) context.Context {
+			return s.ctx
+		},
+	}
+
+	log.Println("JSON API server running on port", s.cfg.ListenAddress)
+	log.Fatal(srv.ListenAndServe())
 }
 
 func (s *APIServer) customHandler(f apiFunc) http.HandlerFunc {

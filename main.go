@@ -53,6 +53,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	server := api.NewAPIServer(cfg, store, rdb)
+	server := api.NewAPIServer(context.Background(), cfg, store, rdb)
 	server.Run()
 }
