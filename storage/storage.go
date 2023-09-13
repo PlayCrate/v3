@@ -140,7 +140,7 @@ func (s *PostgresStore) CreateTables() error {
 
 		rows, err := s.db.Query(context.Background(), query, cutoffTime)
 		if err != nil {
-			fmt.Errorf("unable to query database: %v", err)
+			fmt.Printf("unable to query database: %v", err)
 			return
 		}
 
@@ -153,7 +153,7 @@ func (s *PostgresStore) CreateTables() error {
 
 			err := rows.Scan(&robloxId, &robloxName, &itemData)
 			if err != nil {
-				fmt.Errorf("unable to query database: %v", err)
+				fmt.Printf("unable to query database: %v", err)
 				return
 			}
 
@@ -166,7 +166,7 @@ func (s *PostgresStore) CreateTables() error {
 
 			updatedItemData, err := json.Marshal(itemData)
 			if err != nil {
-				fmt.Errorf("unable to marshal itemData: %v", err)
+				fmt.Printf("unable to marshal itemData: %v", err)
 				return
 			}
 
