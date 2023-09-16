@@ -439,38 +439,47 @@ func GetLeaderboards(w http.ResponseWriter, r *http.Request, s *APIServer) error
 	default:
 		return fmt.Errorf("Invalid Leaderboard")
 	}
+}
 
-	// cached, err := s.rdb.Get(context.Background(), "eggs-lb").Result()
-	// if err != nil {
-	// 	return err
-	// }
+func SeasonLB(w http.ResponseWriter, r *http.Request, s *APIServer) error {
+	if r.Method == "POST" {
+		SeasonLB := new(models.SeasonLBAccount)
+		if err := json.NewDecoder(r.Body).Decode(SeasonLB); err != nil {
+			return err
+		}
 
-	// var cachedEggs []*models.PlayerDataResponse
-	// err = json.Unmarshal([]byte(cached), &cachedEggs)
-	// if err != nil {
-	// 	return err
-	// }
+		if SeasonLB.Payload == "" {
+			return fmt.Errorf("Invalid Payload")
+		}
 
-	// leaderboards := map[string]func() (*models.PlayerDataResponse, error){
-	// 	"eggs":     s.store.GetEggs,
-	// 	"bubbles":  s.store.GetBubbles,
-	// 	"secrets":  s.store.GetSecrets,
-	// 	"power":    s.store.GetPower,
-	// 	"robux":    s.store.GetRobux,
-	// 	"playtime": s.store.GetPlaytime,
-	// }
+		switch SeasonLB.Payload {
+		case "INSERT_ACCOUNT":
+			if err := s.store.InsertSeasonLB(SeasonLB); err != nil {
+				return err
+			}
 
-	// if leaderboardFunc, ok := leaderboards[vars]; ok {
-	// 	data, err := leaderboardFunc()
-	// 	if err != nil {
-	// 		return err
-	// 	}
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    "Successfully inserted into season leaderboard",
+			})
+		case "READ_LEADERBOARD":
+			cached, err := s.rdb.Get(context.Background(), "season-lb").Result()
+			if err != nil {
+				return err
+			}
+			cachedSeason := new(any)
+			err = json.Unmarshal([]byte(cached), &cachedSeason)
 
-	// 	return s.WriteJSON(w, http.StatusOK, ApiResponse{
-	// 		Success: true,
-	// 		Data:    data,
-	// 	})
-	// }
+			if err != nil {
+				return err
+			}
 
-	// return fmt.Errorf("Invalid Leaderboard")
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    cachedSeason,
+			})
+		}
+	}
+
+	return fmt.Errorf("Invalid Method")
 }
