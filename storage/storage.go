@@ -44,6 +44,9 @@ type Storage interface {
 	InsertPetsExistance(*models.PetsExistance) error
 	GetPetsExistance() ([]*models.GetPetsExistance, error)
 	DeletePetsExistence(*models.PetsExistance) error
+
+	InsertSeasonLB(*models.SeasonLBAccount) error
+	GetSeasonLB() (*models.GetSeasonLB, error)
 }
 
 type PostgresStore struct {
@@ -120,6 +123,12 @@ func (s *PostgresStore) CreateTables() error {
 			petId VARCHAR(255) NOT NULL,
 			petCount BIGINT NOT NULL DEFAULT 0,
 			CONSTRAINT uc_robloxid_petid UNIQUE (robloxId, petId)
+		)`,
+		`CREATE TABLE IF NOT EXISTS season_lb (
+			id SERIAL PRIMARY KEY,
+			robloxId BIGINT NOT NULL UNIQUE,
+			season_main BIGINT NOT NULL DEFAULT 0,
+			season_event BIGINT NOT NULL DEFAULT 0
 		)`,
 	}
 
@@ -310,6 +319,15 @@ func (s *PostgresStore) CreateTables() error {
 			}
 		}
 
+		seasonlb, err := s.GetSeasonLB()
+		if err != nil {
+			fmt.Println("failed to get season lb:", err)
+		} else {
+			if err := cacheData(s, "season-lb", seasonlb); err != err {
+				fmt.Println(err)
+			}
+		}
+
 		fmt.Println("Successfully updated pets and eggs")
 	}
 
@@ -322,6 +340,11 @@ func (s *PostgresStore) CreateTables() error {
 	c.Start()
 
 	return nil
+}
+
+func PrettyPrint(i interface{}) string {
+	s, _ := json.MarshalIndent(i, "", "\t")
+	return string(s)
 }
 
 func cacheData(s *PostgresStore, key string, data interface{}, TTL ...int) error {

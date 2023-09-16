@@ -18,5 +18,7 @@ var routes = Routes{
 
 	Route{"Auction", "POST", "/auction", Auctions},
 
+	Route{"SeasonLB", "POST", "/season-lb", SeasonLB},
+
 	Route{"PetsExistance", "POST", "/pets-exist", PetsExistance},
 }
