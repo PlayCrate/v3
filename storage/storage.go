@@ -47,6 +47,9 @@ type Storage interface {
 
 	InsertSeasonLB(*models.SeasonLBAccount) error
 	GetSeasonLB() (*models.GetSeasonLB, error)
+
+	InsertHalloweenLB(*models.HalloweenAccount) error
+	GetHalloweenLB() (*models.GetHalloweenLB, error)
 }
 
 type PostgresStore struct {
@@ -329,20 +332,20 @@ func (s *PostgresStore) CreateTables() error {
 		if err != nil {
 			fmt.Println("failed to get season lb:", err)
 		} else {
-			if err := cacheData(s, "season-lb", seasonlb); err != err {
+			if err := cacheData(s, "season-lb", seasonlb); err != nil {
 				fmt.Println(err)
 			}
 		}
 
 		// Cache halloween lb
-		// halloweenlb, err = s.GetHalloweenLB();
-		// if err != nil {
-		//     fmt.Println("failed to get halloween lb:", err);
-		// } else {
-		//     if err := cacheData(s, "halloween-lb", halloweenlb); err != err {
-		//         fmt.Println(err)
-		//     }
-		// }
+		halloweenlb, err := s.GetHalloweenLB()
+		if err != nil {
+			fmt.Println("failed to get halloween lb:", err)
+		} else {
+			if err := cacheData(s, "halloween-lb", halloweenlb); err != nil {
+				fmt.Println(err)
+			}
+		}
 
 		fmt.Println("Successfully updated pets and eggs")
 	}
