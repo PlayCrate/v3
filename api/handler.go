@@ -483,3 +483,46 @@ func SeasonLB(w http.ResponseWriter, r *http.Request, s *APIServer) error {
 
 	return fmt.Errorf("Invalid Method")
 }
+
+func HalloweenLB(w http.ResponseWriter, r *http.Request, s *APIServer) error {
+	if r.Method == "POST" {
+		HalloweenLB := new(models.HalloweenAccount)
+		if err := json.NewDecoder(r.Body).Decode(HalloweenLB); err != nil {
+			return err
+		}
+
+		if HalloweenLB.Payload == "" {
+			return fmt.Errorf("Invalid Payload")
+		}
+
+		switch HalloweenLB.Payload {
+		case "INSERT_ACCOUNT":
+			if err := s.store.InsertHalloweenLB(HalloweenLB); err != nil {
+				return err
+			}
+
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    "Successfully inserted into halloween leaderboard",
+			})
+		case "READ_LEADERBOARD":
+			cached, err := s.rdb.Get(context.Background(), "halloween-lb").Result()
+			if err != nil {
+				return err
+			}
+			cachedHalloween := new(any)
+			err = json.Unmarshal([]byte(cached), &cachedHalloween)
+
+			if err != nil {
+				return err
+			}
+
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    cachedHalloween,
+			})
+		}
+	}
+
+	return fmt.Errorf("Invalid Method")
+}

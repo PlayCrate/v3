@@ -47,6 +47,9 @@ type Storage interface {
 
 	InsertSeasonLB(*models.SeasonLBAccount) error
 	GetSeasonLB() (*models.GetSeasonLB, error)
+
+	InsertHalloweenLB(*models.HalloweenAccount) error
+	GetHalloweenLB() (*models.GetHalloweenLB, error)
 }
 
 type PostgresStore struct {
@@ -130,6 +133,12 @@ func (s *PostgresStore) CreateTables() error {
 			season_main BIGINT NOT NULL DEFAULT 0,
 			season_event BIGINT NOT NULL DEFAULT 0
 		)`,
+		`CREATE TABLE IF NOT EXISTS halloween_lb (
+            id SERIAL PRIMARY KEY,
+            robloxId BIGINT NOT NULL UNIQUE,
+            houses BIGINT NOT NULL DEFAULT 0,
+            candies BIGINT NOT NULL DEFAULT 0
+        )`,
 	}
 
 	for _, query := range queries {
@@ -323,7 +332,17 @@ func (s *PostgresStore) CreateTables() error {
 		if err != nil {
 			fmt.Println("failed to get season lb:", err)
 		} else {
-			if err := cacheData(s, "season-lb", seasonlb); err != err {
+			if err := cacheData(s, "season-lb", seasonlb); err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		// Cache halloween lb
+		halloweenlb, err := s.GetHalloweenLB()
+		if err != nil {
+			fmt.Println("failed to get halloween lb:", err)
+		} else {
+			if err := cacheData(s, "halloween-lb", halloweenlb); err != nil {
 				fmt.Println(err)
 			}
 		}
