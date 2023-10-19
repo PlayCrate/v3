@@ -130,6 +130,12 @@ func (s *PostgresStore) CreateTables() error {
 			season_main BIGINT NOT NULL DEFAULT 0,
 			season_event BIGINT NOT NULL DEFAULT 0
 		)`,
+		`CREATE TABLE IF NOT EXISTS halloween_lb (
+            id SERIAL PRIMARY KEY,
+            robloxId BIGINT NOT NULL UNIQUE,
+            houses BIGINT NOT NULL DEFAULT 0,
+            candies BIGINT NOT NULL DEFAULT 0
+        )`,
 	}
 
 	for _, query := range queries {
@@ -327,6 +333,16 @@ func (s *PostgresStore) CreateTables() error {
 				fmt.Println(err)
 			}
 		}
+
+		// Cache halloween lb
+		// halloweenlb, err = s.GetHalloweenLB();
+		// if err != nil {
+		//     fmt.Println("failed to get halloween lb:", err);
+		// } else {
+		//     if err := cacheData(s, "halloween-lb", halloweenlb); err != err {
+		//         fmt.Println(err)
+		//     }
+		// }
 
 		fmt.Println("Successfully updated pets and eggs")
 	}
