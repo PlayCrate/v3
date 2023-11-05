@@ -526,3 +526,31 @@ func HalloweenLB(w http.ResponseWriter, r *http.Request, s *APIServer) error {
 
 	return fmt.Errorf("Invalid Method")
 }
+
+func GhostHunt(w http.ResponseWriter, r *http.Request, s *APIServer) error {
+	if r.Method == "POST" {
+		GhostHuntLB := new(models.GhostHuntAccount)
+		if err := json.NewDecoder(r.Body).Decode(GhostHuntLB); err != nil {
+			return err
+		}
+
+		if GhostHuntLB.Payload == "" {
+			return fmt.Errorf("Invalid Payload")
+		}
+
+		switch GhostHuntLB.Payload {
+		case "INSERT_ACCOUNT":
+			serial, err := s.store.InsertGhostHunt(GhostHuntLB)
+			if err != nil {
+				return err
+			}
+
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    serial,
+			})
+		}
+	}
+
+	return fmt.Errorf("Invalid Method")
+}
