@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/gorilla/mux v1.8.0
 	github.com/jackc/pgx/v5 v5.4.3
-	github.com/redis/go-redis/v9 v9.2.1
+	github.com/redis/go-redis/v9 v9.3.0
 	github.com/robfig/cron v1.2.0
 )
 
