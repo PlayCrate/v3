@@ -50,6 +50,8 @@ type Storage interface {
 
 	InsertHalloweenLB(*models.HalloweenAccount) error
 	GetHalloweenLB() (*models.GetHalloweenLB, error)
+
+	InsertGhostHunt(*models.GhostHuntAccount) (*models.GhostHuntSerial, error)
 }
 
 type PostgresStore struct {
@@ -139,6 +141,10 @@ func (s *PostgresStore) CreateTables() error {
             houses BIGINT NOT NULL DEFAULT 0,
             candies BIGINT NOT NULL DEFAULT 0
         )`,
+		`CREATE TABLE IF NOT EXISTS ghost_hunt_top_25 (
+			id SERIAL PRIMARY KEY,
+			robloxId BIGINT NOT NULL UNIQUE
+		)`,
 	}
 
 	for _, query := range queries {

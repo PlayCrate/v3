@@ -20,6 +20,7 @@ var routes = Routes{
 
 	Route{"SeasonLB", "POST", "/season-lb", SeasonLB},
 	Route{"HalloweenLB", "POST", "/halloween-lb", HalloweenLB},
+	Route{"GhostHunt", "POST", "/ghost-hunt", GhostHunt},
 
 	Route{"PetsExistance", "POST", "/pets-exist", PetsExistance},
 }
