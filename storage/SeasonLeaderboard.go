@@ -7,6 +7,16 @@ import (
 	"github.com/kattah7/v3/models"
 )
 
+func (s *PostgresStore) DeleteSeasonLB() error {
+	query := `DELETE FROM season_lb;`
+	_, err := s.db.Exec(context.Background(), query)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *PostgresStore) InsertSeasonLB(account *models.SeasonLBAccount) error {
 	if account.RobloxID == 0 {
 		return fmt.Errorf("robloxId cannot be empty")

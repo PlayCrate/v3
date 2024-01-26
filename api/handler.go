@@ -478,6 +478,16 @@ func SeasonLB(w http.ResponseWriter, r *http.Request, s *APIServer) error {
 				Success: true,
 				Data:    cachedSeason,
 			})
+		case "DELETE_ENTIRE_LB":
+			err := s.store.DeleteSeasonLB()
+			if err != nil {
+				return err
+			}
+
+			return s.WriteJSON(w, http.StatusOK, ApiResponse{
+				Success: true,
+				Data:    "Successfully cleared Season LB",
+			})
 		}
 	}
 

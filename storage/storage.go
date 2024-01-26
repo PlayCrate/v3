@@ -47,6 +47,7 @@ type Storage interface {
 
 	InsertSeasonLB(*models.SeasonLBAccount) error
 	GetSeasonLB() (*models.GetSeasonLB, error)
+	DeleteSeasonLB() error
 
 	InsertHalloweenLB(*models.HalloweenAccount) error
 	GetHalloweenLB() (*models.GetHalloweenLB, error)
